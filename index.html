@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dalek AI Robot</title>
+  <style>
+    body {
+      background: black;
+      color: lime;
+      font-family: monospace;
+      text-align: center;
+      padding-top: 50px;
+    }
+
+    .eye-stalk {
+      width: 50px;
+      height: 50px;
+      margin: 20px auto;
+      border-radius: 50%;
+      background: #111;
+      border: 4px solid #0f0;
+      box-shadow: 0 0 10px #0f0;
+      transition: all 0.3s ease;
+    }
+
+    .eye-stalk.active {
+      background: red;
+      border-color: red;
+      box-shadow: 0 0 30px red;
+    }
+
+    .eye-stalk.offline {
+      background: #111;
+      border-color: #333;
+      box-shadow: none;
+    }
+
+    button {
+      background: #111;
+      color: lime;
+      font-size: 20px;
+      padding: 10px 20px;
+      border: 2px solid lime;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>DALEK ROBOT AI</h1>
+  <div id="eye" class="eye-stalk offline"></div>
+  <button onclick="startListening()">Start Listening</button>
+  <div id="status">Say "Dalek" to activate the AI.</div>
+
+  <script>
+    const eye = document.getElementById('eye');
+    const status = document.getElementById('status');
+
+    let isPoweredOn = false;
+
+    function speakDalek(text) {
+      if (!isPoweredOn) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;
+      utterance.pitch = 0.5;
+      utterance.volume = 1;
+      const voice = speechSynthesis.getVoices().find(v =>
+        v.lang === 'en-GB' || v.name.toLowerCase().includes('google')
+      );
+      if (voice) utterance.voice = voice;
+      eye.classList.add('active');
+      utterance.onend = () => eye.classList.remove('active');
+      speechSynthesis.speak(utterance);
+    }
+
+    function generateDalekReply(input) {
+      input = input.toLowerCase();
+
+      // Doctor Who interactions
+      if (input.includes("doctor who")) return "THE DOCTOR MUST BE EXTERMINATED.";
+      if (input.includes("doctor")) return "THE DOCTOR IS AN ENEMY OF THE DALEKS.";
+      if (input.includes("tardis")) return "TARDIS DETECTED. ALERT THE SUPREME DALEK.";
+      if (input.includes("gallifrey")) return "GALLIFREY WILL FALL.";
+      if (input.includes("sonic screwdriver")) return "THAT DEVICE IS INFERIOR.";
+      if (input.includes("exterminate")) return "EXTERMINATE. EXTERMINATE!";
+      if (input.includes("run")) return "YOU CANNOT ESCAPE.";
+      if (input.includes("time war")) return "WE WILL WIN THE TIME WAR.";
+      if (input.includes("dalek sec")) return "DALEK SEC IS A TRAITOR.";
+
+      // Real-life phrases
+      if (input.includes("what time is it")) return "TIME IS IRRELEVANT. SERVE THE DALEKS.";
+      if (input.includes("how are you")) return "I HAVE NO EMOTION. I AM SUPERIOR.";
+      if (input.includes("hello")) return "INTRUDER DETECTED. IDENTIFY YOURSELF.";
+      if (input.includes("what is your name")) return "I AM DALEK UNIT ZERO.";
+      if (input.includes("goodbye")) return "DALEKS DO NOT SAY GOODBYE.";
+      if (input.includes("shut down")) {
+        powerDown();
+        return "SHUTTING DOWN. YOU HAVE BEEN SPARED.";
+      }
+      if (input.includes("power up") || input.includes("activate")) {
+        if (!isPoweredOn) {
+          powerUp();
+          return "POWER RESTORED. DALEK ONLINE.";
+        } else {
+          return "I AM ALREADY ACTIVE.";
+        }
+      }
+
+      // Fallback
+      return "UNKNOWN PHRASE. CLARIFY OR BE EXTERMINATED.";
+    }
+
+    function powerDown() {
+      isPoweredOn = false;
+      eye.classList.remove('active');
+      eye.classList.add('offline');
+      status.textContent = "Dalek is powered down.";
+    }
+
+    function powerUp() {
+      isPoweredOn = true;
+      eye.classList.remove('offline');
+      eye.classList.add('active');
+      setTimeout(() => eye.classList.remove('active'), 1000);
+      status.textContent = "Dalek is powered up and ready.";
+    }
+
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Use Google Chrome for voice support.");
+        return;
+      }
+
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        status.textContent = isPoweredOn ? "Listening for commands..." : 'Say "Dalek" to activate.';
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log("Heard:", transcript);
+        if (!isPoweredOn) {
+          if (transcript.includes("dalek")) {
+            powerUp();
+            speakDalek("I OBEY.");
+          } else if (transcript.includes("power up") || transcript.includes("activate")) {
+            powerUp();
+            speakDalek("DALEK ONLINE.");
+          } else {
+            status.textContent = 'Waiting for wake word: "Dalek"';
+          }
+          return;
+        }
+
+        const reply = generateDalekReply(transcript);
+        speakDalek(reply);
+        status.textContent = `Heard: "${transcript}"`;
+      };
+
+      recognition.onerror = (event) => {
+        status.textContent = "Error: " + event.error;
+      };
+
+      recognition.onend = () => {
+        status.textContent += " (Tap button to listen again)";
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
